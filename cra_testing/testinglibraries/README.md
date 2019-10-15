@@ -1,68 +1,50 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# working with testing libraries
+## 
 
-## Available Scripts
+1. Create a React project with create-react-app.
 
-In the project directory, you can run:
+2. Install `@testing-library/jest-dom` and `@testing-library/react` with yarn or npm. We do NOT need to install Jest as CRA projects come with Jest installed and working out of the box.
 
-### `yarn start`
+3. Open App.test.js (inside the src folder). We won’t be needing react-dom as react-testing-library includes a render method to mount our components to an in-memory DOM. Let’s delete the contents of the test and bring in our dependencies:
+    import React from 'react';
+    import * as rtl from '@testing-library/react';
+    import '@testing-library/jest-dom/extend-expect';
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+    afterEach(rtl.cleanup);
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+    it('renders without crashing', () => {
+     // ready to test!
+    });
 
-### `yarn test`
+4. Note a few things about the imports:
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+    - React has to be in scope because we will be using JSX.
+    - react-testing-library exposes a number of named functions we bring in using the import * as syntax.
+    - Code we need for its side effects can be imported and not saved into a variable, like we do with @testing-library/jest-dom/extend-expect to extend Jest’s repertoire of matchers.
+    - We need to clean up after each test! Otherwise the simulated, in-memory DOM we render our components in will just get larger and larger.
 
-### `yarn build`
+5. Render a React element containing a “Hello World” message, and run tests as usual:
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+   it('renders without crashing', () => {
+     const wrapper = rtl.render(
+       <span className="greet">hello world</span>
+     );
+   });
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+6. Inspect the output by logging wrapper.debug(). The element will be rendered into a in-memory document-like structure
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+7. Capture the node of interest. Let’s assume the true, actual purpose of some React component returning the jsx <span>hello world</span> is to have a “hello” message rendered to the screen for the user to see. We could assert, that by mounting such a component, a span containing this language will be rendered by the browser. We can use a dom-testing-library query to capture such an element:
+   it('renders without crashing', () => {
+     const wrapper = rtl.render(
+       <span className="greet">hello world</span>
+     );
+     // the querying functionality is accessed through the wrapper:
+     const element = wrapper.queryByText(/hello/i);
 
-### `yarn eject`
+     // assertions will come in here
+   });
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `yarn build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+8. Run assertions about the actual output:
+   expect(element).toBeTruthy(); // jest matcher
+   expect(element).toBeInTheDocument(); // jest-dom matcher
+   expect(element).toBeVisible(); // jest-dom matcher
